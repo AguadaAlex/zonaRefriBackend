@@ -18,8 +18,8 @@ public class Product {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "category_id", nullable = false)
-    private ProductCategory category;
+    @JoinColumn(name = "subcategory_id", nullable = false)
+    private ProductoSubCategory subCategory;
 
     @Column(name = "sku")
     private String sku;
