@@ -9,7 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -29,7 +31,8 @@ public class ProductoController {
                         producto.getNombre(),
                         producto.getDescripcion(),
                         producto.getPrecio(),
-                        producto.getStock()
+                        producto.getStock(),
+                        producto.getImagenUrl()
                 ))
                 .toList();
     }
@@ -44,67 +47,55 @@ public class ProductoController {
                 producto.getNombre(),
                 producto.getDescripcion(),
                 producto.getPrecio(),
-                producto.getStock()
+                producto.getStock(),
+                producto.getImagenUrl()
         );
     }
 
-    @PostMapping
-    public List<ProductoResponse> crearProductos(@Valid @RequestBody List<ProductoRequest> productosRequest) {
-        List<ProductoDomain> productosGuardados = productosRequest.stream()
-                .map(productoRequest -> productoService.crearProducto(
-                        new ProductoDomain(
-                                null,
-                                productoRequest.getNombre(),
-                                productoRequest.getDescripcion(),
-                                productoRequest.getPrecio(),
-                                productoRequest.getStock(),
-                                "", // Imagen vacía en lugar de null
-                                "Sin categoría", // Categoría por defecto
-                                new Date() // Fecha de creación automática
+    @PostMapping("/crear")
+    public ResponseEntity<ProductoResponse> crearProducto(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("nombre") String nombre,
+            @RequestParam("descripcion") String descripcion,
+            @RequestParam("precio") BigDecimal precio,
+            @RequestParam("stock") Integer stock) throws Exception {
 
-                        )
-                ))
-                .toList();
+        ProductoDomain producto = new ProductoDomain(null, nombre, descripcion, precio, stock, "", "Sin categoría", new Date());
 
-        productosGuardados.forEach(producto -> System.out.println("Producto guardado: " + producto)); // 📌 Depuración
+        // 📌 El servicio se encarga de la subida de la imagen a S3 y la creación del producto
+        ProductoDomain productoGuardado = productoService.crearProducto(producto, file);
 
-        return productosGuardados.stream()
-                .map(producto -> new ProductoResponse(
-                        producto.getId(),
-                        producto.getNombre(),
-                        producto.getDescripcion(),
-                        producto.getPrecio(),
-                        producto.getStock()
-                ))
-                .toList();
+        return ResponseEntity.ok(new ProductoResponse(
+                productoGuardado.getId(),
+                productoGuardado.getNombre(),
+                productoGuardado.getDescripcion(),
+                productoGuardado.getPrecio(),
+                productoGuardado.getStock(),
+                productoGuardado.getImagenUrl()
+        ));
     }
 
     @PutMapping("/{id}")
-    public ProductoResponse actualizarProducto(@PathVariable Integer id, @Valid @RequestBody ProductoRequest productoRequest) {
-        ProductoDomain productoActualizado = productoService.actualizarProducto(
-                id,
-                new ProductoDomain(
-                        id,
-                        productoRequest.getNombre(),
-                        productoRequest.getDescripcion(),
-                        productoRequest.getPrecio(),
-                        productoRequest.getStock(),
-                        "", // Imagen vacía en lugar de null
-                        "Sin categoría", // Categoría por defecto
-                        new Date() // Fecha de creación automática
+    public ProductoResponse actualizarProducto(
+            @PathVariable Integer id,
+            @Valid @RequestBody ProductoRequest productoRequest,
+            @RequestParam(value = "file", required = false) MultipartFile file) throws Exception {
 
-                )
-        );
-        System.out.println("Producto actualizado en servicio: " + productoActualizado); // 📌 Depuración
+        ProductoDomain producto = new ProductoDomain(id, productoRequest.getNombre(), productoRequest.getDescripcion(),
+                productoRequest.getPrecio(), productoRequest.getStock(), "", "Sin categoría", new Date());
+
+        ProductoDomain productoActualizado = productoService.actualizarProducto(id, producto, file);
 
         return new ProductoResponse(
                 productoActualizado.getId(),
                 productoActualizado.getNombre(),
                 productoActualizado.getDescripcion(),
                 productoActualizado.getPrecio(),
-                productoActualizado.getStock()
+                productoActualizado.getStock(),
+                productoActualizado.getImagenUrl()
         );
     }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminarProducto(@PathVariable Integer id) {
         productoService.eliminarProducto(id);

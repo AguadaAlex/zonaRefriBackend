@@ -53,12 +53,14 @@ public class ProductoResponse {
     private String descripcion;
     private BigDecimal precio;
     private Integer stock;
+    private String imagenUrl;
 
-    public ProductoResponse(Integer id, String nombre, String descripcion, BigDecimal precio, Integer stock) {
+    public ProductoResponse(Integer id, String nombre, String descripcion, BigDecimal precio, Integer stock,String imagenUrl) {
         this.id = id;
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.precio = precio;
         this.stock = stock;
+        this.imagenUrl = imagenUrl;
     }
 }
